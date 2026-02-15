@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from lost.pyapi import script
 import os
 from PIL import Image
@@ -81,7 +79,7 @@ class LostScript(script.Script):
                 if only_basename != "-" and os.path.basename(img_path) != only_basename:
                     continue
 
-                # Read image size (works for local filesystem paths; for non-local fs you’d need fs.open)
+                # Read image size (works for local filesystem paths; for non-local fs youd need fs.open)
                 # LOST rawFile is usually local, so this is fine.
                 with Image.open(img_path) as im:
                     w, h = im.size
@@ -95,7 +93,7 @@ class LostScript(script.Script):
                 anno_types = []
                 anno_labels = []
 
-                # r.boxes.xyxy and r.boxes.cls are standard in Ultralytics Results :contentReference[oaicite:1]{index=1}
+                # r.boxes.xyxy and r.boxes.cls are standard in Ultralytics Results
                 if r.boxes is not None and len(r.boxes) > 0:
                     xyxy = r.boxes.xyxy.cpu().tolist()
                     cls_ids = r.boxes.cls.int().cpu().tolist()
