@@ -1,0 +1,52 @@
+{
+  "description": "Run YOLO on images and request SIA with model proposals for human correction.",
+  "author": "qubo",
+  "pipe-schema-version": 1.0,
+  "elements": [
+    {
+      "peN": 0,
+      "peOut": [1],
+      "datasource": { "type": "rawFile" }
+    },
+    {
+      "peN": 1,
+      "peOut": [2],
+      "script": {
+        "path": "yolo_suggest_sia.py",
+        "description": "YOLO inference -> request_annos with bbox proposals."
+      }
+    },
+    {
+      "peN": 2,
+      "peOut": null,
+      "annoTask": {
+        "name": "SIA - Correct YOLO proposals",
+        "type": "sia",
+        "instructions": "Review the suggested boxes. Edit/delete them and draw any missing ones. Then label boxes.",
+        "configuration": {
+          "tools": {
+            "point": false,
+            "line": false,
+            "polygon": false,
+            "bbox": true,
+            "junk": false
+          },
+          "annos": {
+            "multilabels": false,
+            "actions": {
+              "draw": true,
+              "label": true,
+              "edit": true
+            },
+            "minArea": 25,
+            "maxAnnos": null
+          },
+          "img": {
+            "multilabels": false,
+            "actions": { "label": false }
+          }
+        }
+      }
+    }
+  ]
+}
