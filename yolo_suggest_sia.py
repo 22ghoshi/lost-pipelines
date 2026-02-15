@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from lost.pyapi import script
 import os
 from PIL import Image

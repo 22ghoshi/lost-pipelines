@@ -22,6 +22,7 @@
       "annoTask": {
         "name": "SIA - Correct YOLO proposals",
         "type": "sia",
+        "instruction_id": 2,
         "instructions": "Review the suggested boxes. Edit/delete them and draw any missing ones. Then label boxes.",
         "configuration": {
           "tools": {
