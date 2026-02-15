@@ -57,12 +57,16 @@ class LostScript(script.Script):
             tree = self.create_label_tree("yolo-labels")
             # root exists as the tree root; add children as class labels
             # Ultralytics model.names is dict[int,str]
+            df = tree.to_df()
+            root_id = int(df.loc[df["is_root"] == True, "idx"].iloc[0])
             for cls_id, cls_name in model.names.items():
-                tree.create_child(tree.root_leaf.idx, cls_name, external_id=str(cls_id))
+                tree.create_child(root_id, cls_name, external_id=str(cls_id))
 
         # Build mapping from YOLO class id -> LOST label_leaf_id
         # (we look up children by name)
-        child_ids_and_names = tree.get_child_vec(tree.root_leaf.idx, columns=["idx", "name"])
+        df = tree.to_df()
+        root_id = int(df.loc[df["is_root"] == True, "idx"].iloc[0])
+        child_ids_and_names = tree.get_child_vec(root_id, columns=["idx", "name"])
         name_to_leaf_id = {name: idx for idx, name in child_ids_and_names}
 
         only_basename = self.get_arg("single_image")
