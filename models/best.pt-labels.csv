@@ -1,0 +1,11 @@
+idx,name,external_id,parent_leaf_id
+1,yolo-labels-2,,
+2,gate,0,1
+3,gate_shark,1,1
+4,gate_sawfish,2,1
+5,torpedo_board,3,1
+6,torpedo_shark,4,1
+7,torpedo_shark_circle,5,1
+8,torpedo_sawfish,6,1
+9,torpedo_sawfish_circle,7,1
+10,background,8,1

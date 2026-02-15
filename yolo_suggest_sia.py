@@ -46,9 +46,9 @@ class LostScript(script.Script):
     def main(self):
         # Resolve the model path inside the pipeline project
         model_rel = self.get_arg("model_path")
-        # model_abs = self.get_path(model_rel, context="pipe")
-
-        model = YOLO(model_rel)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        model_abs = model_rel if os.path.isabs(model_rel) else os.path.join(script_dir, model_rel)
+        model = YOLO(model_abs)
 
         # Create a label tree matching YOLO names (optional, but enables anno_labels)
         # If tree exists already, this will return it; otherwise create_root will.
