@@ -65,9 +65,11 @@ class LostScript(script.Script):
         # Build mapping from YOLO class id -> LOST label_leaf_id
         # (we look up children by name)
         df = tree.to_df()
-        root_id = int(df.loc[df["is_root"] == True, "idx"].iloc[0])
-        child_ids_and_names = tree.get_child_vec(root_id, columns=["idx", "name"])
-        name_to_leaf_id = {name: idx for idx, name in child_ids_and_names}
+        name_to_leaf_id = {
+            str(row["name"]).lower(): int(row["idx"])
+            for _, row in df.iterrows()
+            if not bool(row.get("is_root", False))  # skip root if present
+        }
 
         only_basename = self.get_arg("single_image")
         conf = float(self.get_arg("conf"))
@@ -106,7 +108,7 @@ class LostScript(script.Script):
                         annos.append(self._xyxy_to_rel_xywh(box_xyxy, w, h))
                         anno_types.append("bbox")
 
-                        cls_name = model.names.get(int(cls_id), str(cls_id))
+                        cls_name = str(model.names.get(int(cls_id), str(cls_id))).lower()
                         leaf_id = name_to_leaf_id.get(cls_name)
                         # anno_labels expects list-of-list (one list per anno) for single-label mode
                         anno_labels.append([leaf_id] if leaf_id is not None else [])
