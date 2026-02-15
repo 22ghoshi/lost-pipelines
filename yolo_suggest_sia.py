@@ -108,19 +108,17 @@ class LostScript(script.Script):
                         annos.append(self._xyxy_to_rel_xywh(box_xyxy, w, h))
                         anno_types.append("bbox")
 
-                        cls_name = str(model.names.get(int(cls_id), str(cls_id))).lower()
+                        cls_name = model.names.get(int(cls_id), str(cls_id))
                         leaf_id = name_to_leaf_id.get(cls_name)
-                        # anno_labels expects list-of-list (one list per anno) for single-label mode
-                        anno_labels.append([leaf_id] if leaf_id is not None else [])
+                        anno_labels.append([int(leaf_id)] if leaf_id is not None else [])
 
-                # Request the image with proposal boxes (user can edit/add/delete in SIA)
-                self.outp.request_annos(
-                    img_path,
-                    fs=fs,
-                    annos=annos,
-                    anno_types=anno_types,
-                    anno_labels=anno_labels
-                )
+                kwargs = dict(img=img_path, fs=fs)
+
+
+                if annos:
+                    kwargs.update(annos=annos, anno_types=["bbox"] * len(annos), anno_labels=anno_labels)
+
+                self.outp.request_annos(**kwargs)
 
                 self.logger.info(f"Requested {len(annos)} YOLO proposals for {img_path}")
 

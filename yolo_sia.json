@@ -36,7 +36,7 @@
             "multilabels": false,
             "actions": {
               "draw": true,
-              "label": true,
+              "label": false,
               "edit": true
             },
             "minArea": 25,
