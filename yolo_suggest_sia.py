@@ -111,6 +111,7 @@ class LostScript(script.Script):
                         cls_name = model.names.get(int(cls_id), str(cls_id))
                         leaf_id = name_to_leaf_id.get(cls_name)
                         anno_labels.append([int(leaf_id)] if leaf_id is not None else [])
+                self.logger.info(f"Labels: {anno_labels}")
 
                 kwargs = dict(img=img_path, fs=fs)
 
