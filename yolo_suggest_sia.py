@@ -10,7 +10,7 @@ ARGUMENTS = {
     "model_path": {"value": "models/best.pt", "help": "Path to YOLO .pt (relative to pipeline project)."},
     "conf": {"value": 0.25, "help": "Confidence threshold."},
     "single_image": {"value": "-", "help": "If not '-', only process this basename (e.g. img001.jpg)."},
-    "recursive": {"value": "false", "help": "Walk recursively if datasource is a directory."}
+    "recursive": {"value": "true", "help": "Walk recursively if datasource is a directory."}
 }
 
 class LostScript(script.Script):
