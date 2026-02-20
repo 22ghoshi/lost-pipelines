@@ -56,9 +56,7 @@ class LostScript(script.Script):
         self.logger.info(f"Model classes: {model.names}")
 
         # Create a label tree matching YOLO names
-        tree = self.get_label_tree("yolo-labels")
-        if tree is None:
-            self.get_label_tree("yolo-labels-2")
+        tree = self.get_label_tree("yolo-labels-2")
         if tree is None:
             self.logger.info("Creating new label tree")
             tree = self.create_label_tree("yolo-labels")
