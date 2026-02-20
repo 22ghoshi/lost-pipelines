@@ -29,18 +29,33 @@ class LostScript(script.Script):
         return [xc, yc, bw, bh]
 
     def _iter_images(self, fs, path):
+        self.logger.info(f"_iter_images called with path: {path}")
+        self.logger.info(f"fs.isfile({path}): {fs.isfile(path)}")
+        
         # datasource may be a single file
         if fs.isfile(path):
             yield path
             return
 
         # otherwise a directory
-        if self.get_arg("recursive"):
+        recursive_arg = self.get_arg("recursive")
+        self.logger.info(f"recursive argument: {recursive_arg} (type: {type(recursive_arg)})")
+        
+        recursive = str(recursive_arg).lower() == "true"
+        self.logger.info(f"recursive evaluated to: {recursive}")
+        
+        if recursive:
+            self.logger.info(f"Walking directory recursively: {path}")
             for root, dirs, files in fs.walk(path):
+                self.logger.info(f"Walking root: {root}, found {len(files)} files")
                 for f in files:
-                    yield os.path.join(root, f)
+                    full_path = os.path.join(root, f)
+                    self.logger.debug(f"Yielding: {full_path}")
+                    yield full_path
         else:
+            self.logger.info(f"Listing directory (non-recursive): {path}")
             for p in fs.ls(path):
+                self.logger.debug(f"Yielding: {p}")
                 yield p
 
     def main(self):
@@ -92,10 +107,13 @@ class LostScript(script.Script):
             self.logger.info(f"Processing datasource: {base_path}")
 
             for img_path in self._iter_images(fs, base_path):
+                self.logger.debug(f"Found file: {img_path}")
                 ext = os.path.splitext(img_path)[1].lower()
                 if ext not in [".jpg", ".jpeg", ".png", ".bmp", ".webp"]:
+                    self.logger.debug(f"Skipping {img_path} - wrong extension")
                     continue
                 if only_basename != "-" and os.path.basename(img_path) != only_basename:
+                    self.logger.debug(f"Skipping {img_path} - doesn't match single_image filter")
                     continue
 
                 self.logger.info(f"Processing image: {img_path}")
