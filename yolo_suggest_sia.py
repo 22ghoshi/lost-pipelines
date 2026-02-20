@@ -44,39 +44,54 @@ class LostScript(script.Script):
                 yield p
 
     def main(self):
+        self.logger.info("=== YOLO SCRIPT STARTED ===")
+        
         # Resolve the model path inside the pipeline project
         model_rel = self.get_arg("model_path")
         script_dir = os.path.dirname(os.path.abspath(__file__))
         model_abs = model_rel if os.path.isabs(model_rel) else os.path.join(script_dir, model_rel)
+        
+        self.logger.info(f"Loading model from: {model_abs}")
         model = YOLO(model_abs)
+        self.logger.info(f"Model classes: {model.names}")
 
-        # Create a label tree matching YOLO names (optional, but enables anno_labels)
-        # If tree exists already, this will return it; otherwise create_root will.
+        # Create a label tree matching YOLO names
         tree = self.get_label_tree("yolo-labels")
         if tree is None:
+            self.get_label_tree("yolo-labels-2")
+        if tree is None:
+            self.logger.info("Creating new label tree")
             tree = self.create_label_tree("yolo-labels")
-            # root exists as the tree root; add children as class labels
-            # Ultralytics model.names is dict[int,str]
             df = tree.to_df()
             root_id = int(df.loc[df["is_root"] == True, "idx"].iloc[0])
+            self.logger.info(f"Root ID: {root_id}")
+            
             for cls_id, cls_name in model.names.items():
                 tree.create_child(root_id, cls_name, external_id=str(cls_id))
+                self.logger.info(f"Created label: {cls_name} (id={cls_id})")
+        else:
+            self.logger.info("Using existing label tree")
 
         # Build mapping from YOLO class id -> LOST label_leaf_id
-        # (we look up children by name)
         df = tree.to_df()
+        self.logger.info(f"Label tree dataframe:\n{df}")
+        
         name_to_leaf_id = {
             str(row["name"]).lower(): int(row["idx"])
             for _, row in df.iterrows()
-            if not bool(row.get("is_root", False))  # skip root if present
+            if not bool(row.get("is_root", False))
         }
+        self.logger.info(f"Name to leaf_id mapping: {name_to_leaf_id}")
 
         only_basename = self.get_arg("single_image")
         conf = float(self.get_arg("conf"))
+        
+        self.logger.info(f"Processing with conf={conf}, single_image={only_basename}")
 
         for ds in self.inp.datasources:
             fs = ds.get_fs()
             base_path = ds.path
+            self.logger.info(f"Processing datasource: {base_path}")
 
             for img_path in self._iter_images(fs, base_path):
                 ext = os.path.splitext(img_path)[1].lower()
@@ -85,21 +100,18 @@ class LostScript(script.Script):
                 if only_basename != "-" and os.path.basename(img_path) != only_basename:
                     continue
 
-                # Read image size (works for local filesystem paths; for non-local fs youd need fs.open)
-                # LOST rawFile is usually local, so this is fine.
+                self.logger.info(f"Processing image: {img_path}")
+                
                 with Image.open(img_path) as im:
                     w, h = im.size
 
                 results = model.predict(source=img_path, conf=conf, verbose=False)
-
-                # One image -> one Results object
                 r = results[0]
 
                 annos = []
                 anno_types = []
                 anno_labels = []
 
-                # r.boxes.xyxy and r.boxes.cls are standard in Ultralytics Results
                 if r.boxes is not None and len(r.boxes) > 0:
                     xyxy = r.boxes.xyxy.cpu().tolist()
                     cls_ids = r.boxes.cls.int().cpu().tolist()
@@ -109,19 +121,32 @@ class LostScript(script.Script):
                         anno_types.append("bbox")
 
                         cls_name = model.names.get(int(cls_id), str(cls_id))
-                        leaf_id = name_to_leaf_id.get(cls_name)
-                        anno_labels.append([int(leaf_id)] if leaf_id is not None else [])
-                self.logger.info(f"Labels: {anno_labels}")
+                        cls_name_lower = str(cls_name).lower()
+                        leaf_id = name_to_leaf_id.get(cls_name_lower)
+                        
+                        if leaf_id is None:
+                            self.logger.warning(f"Class '{cls_name}' not found in label tree! Available: {list(name_to_leaf_id.keys())}")
+                            # Don't add labels if not found - let frontend handle unlabeled boxes
+                            anno_labels.append([])
+                        else:
+                            anno_labels.append([int(leaf_id)])
+                            self.logger.debug(f"Box: class={cls_name} -> leaf_id={leaf_id}")
 
                 kwargs = dict(img=img_path, fs=fs)
 
-
                 if annos:
-                    kwargs.update(annos=annos, anno_types=["bbox"] * len(annos), anno_labels=anno_labels)
+                    kwargs.update(
+                        annos=annos, 
+                        anno_types=["bbox"] * len(annos), 
+                        anno_labels=anno_labels
+                    )
+                    self.logger.info(f"Requesting {len(annos)} boxes with labels: {anno_labels}")
+                else:
+                    self.logger.info(f"No detections for {img_path}")
 
                 self.outp.request_annos(**kwargs)
 
-                self.logger.info(f"Requested {len(annos)} YOLO proposals for {img_path}")
+        self.logger.info("=== YOLO SCRIPT COMPLETED ===")
 
 if __name__ == "__main__":
     my_script = LostScript()
