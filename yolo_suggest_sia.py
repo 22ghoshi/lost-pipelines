@@ -9,7 +9,6 @@ ENVS = ["lost"]
 ARGUMENTS = {
     "model_path": {"value": "models/best.pt", "help": "Path to YOLO .pt (relative to pipeline project)."},
     "conf": {"value": 0.25, "help": "Confidence threshold."},
-    "single_image": {"value": "-", "help": "If not '-', only process this basename (e.g. img001.jpg)."},
     "recursive": {"value": "true", "help": "Walk recursively if datasource is a directory."}
 }
 
@@ -96,10 +95,9 @@ class LostScript(script.Script):
         }
         self.logger.info(f"Name to leaf_id mapping: {name_to_leaf_id}")
 
-        only_basename = self.get_arg("single_image")
         conf = float(self.get_arg("conf"))
         
-        self.logger.info(f"Processing with conf={conf}, single_image={only_basename}")
+        self.logger.info(f"Processing with conf={conf}")
 
         for ds in self.inp.datasources:
             fs = ds.get_fs()
@@ -111,9 +109,6 @@ class LostScript(script.Script):
                 ext = os.path.splitext(img_path)[1].lower()
                 if ext not in [".jpg", ".jpeg", ".png", ".bmp", ".webp"]:
                     self.logger.debug(f"Skipping {img_path} - wrong extension")
-                    continue
-                if only_basename != "-" and os.path.basename(img_path) != only_basename:
-                    self.logger.debug(f"Skipping {img_path} - doesn't match single_image filter")
                     continue
 
                 self.logger.info(f"Processing image: {img_path}")
