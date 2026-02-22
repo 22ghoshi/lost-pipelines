@@ -9,7 +9,8 @@ ENVS = ["lost"]
 ARGUMENTS = {
     "model_path": {"value": "models/best.pt", "help": "Path to YOLO .pt (relative to pipeline project)."},
     "conf": {"value": 0.25, "help": "Confidence threshold."},
-    "recursive": {"value": "true", "help": "Walk recursively if datasource is a directory."}
+    "recursive": {"value": "true", "help": "Walk recursively if datasource is a directory."},
+    "label_tree": {"value": "front_yolo_v3_labels", "help": "name of label tree to use"}
 }
 
 class LostScript(script.Script):
@@ -70,7 +71,7 @@ class LostScript(script.Script):
         self.logger.info(f"Model classes: {model.names}")
 
         # Create a label tree matching YOLO names
-        tree = self.get_label_tree("yolo-labels-2")
+        tree = self.get_label_tree(self.get_arg("label_tree"))
         if tree is None:
             self.logger.info("Creating new label tree")
             tree = self.create_label_tree("yolo-labels")
