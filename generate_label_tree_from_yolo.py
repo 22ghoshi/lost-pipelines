@@ -1,9 +1,16 @@
 from ultralytics import YOLO
 import csv
+import argparse
 
-model_path = "models/front_yolo_v3.pt"   # change to your .pt path
-tree_name  = "front_yolo_v3_labels"
-out_csv    = f"{model_path}-labels.csv"
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--model-path", type=str, help="path to model (e.g. models/best.pt)", required=True)
+parser.add_argument("-t", "--tree-name", type=str, help="the name to be given to the label tree", required=True)
+parser.add_argument("-o", "--out-path", type=str, help="the path to put the output csv in", required=True)
+
+parsed_args, _ = parser.parse_known_args()
+model_path = parsed_args.model_path    # change to your .pt path
+tree_name  = parsed_args.tree_name
+out_csv    = parsed_args.out_path
 
 m = YOLO(model_path)
 names = m.names  # dict[int,str]

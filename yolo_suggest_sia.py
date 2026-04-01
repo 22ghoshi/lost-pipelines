@@ -114,49 +114,63 @@ class LostScript(script.Script):
 
                 self.logger.info(f"Processing image: {img_path}")
                 
-                with Image.open(img_path) as im:
-                    w, h = im.size
-
-                results = model.predict(source=img_path, conf=conf, verbose=False)
-                r = results[0]
-
-                annos = []
-                anno_types = []
-                anno_labels = []
-
-                if r.boxes is not None and len(r.boxes) > 0:
-                    xyxy = r.boxes.xyxy.cpu().tolist()
-                    cls_ids = r.boxes.cls.int().cpu().tolist()
-
-                    for box_xyxy, cls_id in zip(xyxy, cls_ids):
-                        annos.append(self._xyxy_to_rel_xywh(box_xyxy, w, h))
-                        anno_types.append("bbox")
-
-                        cls_name = model.names.get(int(cls_id), str(cls_id))
-                        cls_name_lower = str(cls_name).lower()
-                        leaf_id = name_to_leaf_id.get(cls_name_lower)
+                # Open image from S3 using the filesystem object
+                with fs.open(img_path, 'rb') as f:
+                    with Image.open(f) as im:
+                        w, h = im.size
                         
-                        if leaf_id is None:
-                            self.logger.warning(f"Class '{cls_name}' not found in label tree! Available: {list(name_to_leaf_id.keys())}")
-                            # Don't add labels if not found - let frontend handle unlabeled boxes
-                            anno_labels.append([])
-                        else:
-                            anno_labels.append([int(leaf_id)])
-                            self.logger.debug(f"Box: class={cls_name} -> leaf_id={leaf_id}")
+                        # For YOLO, we need to save to a temp local file since it expects a path
+                        import tempfile
+                        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                            im.save(tmp.name)
+                            tmp_path = tmp.name
+                        
+                        try:
+                            results = model.predict(source=tmp_path, conf=conf, verbose=False)
+                            r = results[0]
+                            
+                            annos = []
+                            anno_types = []
+                            anno_labels = []
 
-                kwargs = dict(img=img_path, fs=fs)
+                            if r.boxes is not None and len(r.boxes) > 0:
+                                xyxy = r.boxes.xyxy.cpu().tolist()
+                                cls_ids = r.boxes.cls.int().cpu().tolist()
 
-                if annos:
-                    kwargs.update(
-                        annos=annos, 
-                        anno_types=["bbox"] * len(annos), 
-                        anno_labels=anno_labels
-                    )
-                    self.logger.info(f"Requesting {len(annos)} boxes with labels: {anno_labels}")
-                else:
-                    self.logger.info(f"No detections for {img_path}")
+                                for box_xyxy, cls_id in zip(xyxy, cls_ids):
+                                    annos.append(self._xyxy_to_rel_xywh(box_xyxy, w, h))
+                                    anno_types.append("bbox")
 
-                self.outp.request_annos(**kwargs)
+                                    cls_name = model.names.get(int(cls_id), str(cls_id))
+                                    cls_name_lower = str(cls_name).lower()
+                                    leaf_id = name_to_leaf_id.get(cls_name_lower)
+                                    
+                                    if leaf_id is None:
+                                        self.logger.warning(f"Class '{cls_name}' not found in label tree! Available: {list(name_to_leaf_id.keys())}")
+                                        anno_labels.append([])
+                                    else:
+                                        anno_labels.append([int(leaf_id)])
+                                        self.logger.debug(f"Box: class={cls_name} -> leaf_id={leaf_id}")
+
+                            kwargs = dict(img=img_path, fs=fs)
+
+                            if annos:
+                                kwargs.update(
+                                    annos=annos, 
+                                    anno_types=["bbox"] * len(annos), 
+                                    anno_labels=anno_labels
+                                )
+                                self.logger.info(f"Requesting {len(annos)} boxes with labels: {anno_labels}")
+                            else:
+                                self.logger.info(f"No detections for {img_path}")
+
+                            self.outp.request_annos(**kwargs)
+                            
+                        finally:
+                            # Clean up temp file
+                            import os as os_module
+                            if os_module.path.exists(tmp_path):
+                                os_module.unlink(tmp_path)
 
         self.logger.info("=== YOLO SCRIPT COMPLETED ===")
 
