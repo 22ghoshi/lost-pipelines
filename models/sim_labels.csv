@@ -1,0 +1,15 @@
+idx,name,external_id,parent_leaf_id
+1,sim_labels,,
+2,gate,0,1
+3,shark,1,1
+4,sawfish,2,1
+5,red_pipe,3,1
+6,bin_front,4,1
+7,bin_sawfish,5,1
+8,bin_shark,6,1
+9,torpedo_board,7,1
+10,torpedo_shark,8,1
+11,torpedo_shark_circle,9,1
+12,torpedo_sawfish,10,1
+13,torpedo_sawfish_circle,11,1
+14,table_front,12,1
