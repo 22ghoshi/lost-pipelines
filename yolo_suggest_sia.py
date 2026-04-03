@@ -1,6 +1,7 @@
 from lost.pyapi import script
 import os
 from PIL import Image
+import tempfile
 
 # You need ultralytics installed in the environment this script runs in
 from ultralytics import YOLO
@@ -120,7 +121,6 @@ class LostScript(script.Script):
                         w, h = im.size
                         
                         # For YOLO, we need to save to a temp local file since it expects a path
-                        import tempfile
                         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
                             im.save(tmp.name)
                             tmp_path = tmp.name
@@ -168,9 +168,8 @@ class LostScript(script.Script):
                             
                         finally:
                             # Clean up temp file
-                            import os as os_module
-                            if os_module.path.exists(tmp_path):
-                                os_module.unlink(tmp_path)
+                            if os.path.exists(tmp_path):
+                                os.unlink(tmp_path)
 
         self.logger.info("=== YOLO SCRIPT COMPLETED ===")
 
