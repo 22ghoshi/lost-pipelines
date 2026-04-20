@@ -1,0 +1,5 @@
+idx,name,external_id,parent_leaf_id
+1,eppley_down_tree_labels,,
+2,bin,0,1
+3,bin_shark,1,1
+4,bin_sawfish,2,1
