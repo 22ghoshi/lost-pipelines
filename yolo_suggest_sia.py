@@ -1,7 +1,8 @@
 from lost.pyapi import script
 import os
-from PIL import Image
 import tempfile
+import cv2
+import numpy as np
 
 # You need ultralytics installed in the environment this script runs in
 from ultralytics import YOLO
@@ -116,19 +117,26 @@ class LostScript(script.Script):
                 self.logger.info(f"Processing image: {img_path}")
                 
                 # Open image from S3 using the filesystem object
-                with fs.open(img_path, 'rb') as f:
-                    with Image.open(f) as im:
-                        w, h = im.size
-                        
-                        # For YOLO, we need to save to a temp local file since it expects a path
+                try:
+                    with fs.open(img_path, 'rb') as f:
+                        img_bytes = f.read()
+                        nparr = np.frombuffer(img_bytes, np.uint8)
+                        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                        h, w = img.shape[:2]
+                        if img is None:
+                            self.logger.error(f"Failed to decode image: {img_path}")
+                            continue
+                        h, w = img.shape[:2]
+                        self.logger.debug(f"Image size: {w}x{h}, channels: {img.shape[2] if len(img.shape) > 2 else 1}")
                         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-                            im.save(tmp.name)
+                            cv2.imwrite(tmp.name, img)
                             tmp_path = tmp.name
-                        
+                            
                         try:
+                            # Run YOLO inference
                             results = model.predict(source=tmp_path, conf=conf, verbose=False)
                             r = results[0]
-                            
+
                             annos = []
                             anno_types = []
                             anno_labels = []
@@ -168,10 +176,16 @@ class LostScript(script.Script):
                             
                         finally:
                             # Clean up temp file
-                            if os.path.exists(tmp_path):
-                                os.unlink(tmp_path)
-
+                            import os as os_module
+                            if os_module.path.exists(tmp_path):
+                                os_module.unlink(tmp_path)
+                except Exception as e:
+                    self.logger.error(f"Error processing {img_path}: {e}")
+                    import traceback
+                    self.logger.error(traceback.format_exc())
+                    continue
+ 
         self.logger.info("=== YOLO SCRIPT COMPLETED ===")
-
+ 
 if __name__ == "__main__":
     my_script = LostScript()
