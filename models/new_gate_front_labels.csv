@@ -1,0 +1,6 @@
+idx,name,external_id,parent_leaf_id
+1,new_eppley_front_tree_labels,,
+2,gate,0,1
+3,gate_search,1,1
+4,gate_survey,2,1
+5,red_pipe,3,1
