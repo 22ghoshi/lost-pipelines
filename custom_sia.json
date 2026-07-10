@@ -12,7 +12,7 @@
       "peN": 1,
       "peOut": [2],
       "script": {
-        "path": "custom_autolabeler.py",
+        "path": "custom_suggest_sia.py",
         "description": "Custom autolabeler -> request_annos with bbox proposals."
       }
     },
