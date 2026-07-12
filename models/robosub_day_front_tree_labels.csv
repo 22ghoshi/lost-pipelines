@@ -1,0 +1,21 @@
+idx,name,external_id,parent_leaf_id
+1,robosub_day_front_labels_modified,,
+2,gate,0,1
+3,gate_search,1,1
+4,gate_survey,2,1
+5,red_pipe,3,1
+6,bin_front,4,1
+7,torpedo_board,5,1
+8,torpedo_fire,6,1
+9,torpedo_firetruck,7,1
+10,torpedo_ambulance,8,1  s
+11,torpedo_blood,9,1
+12,table_front,10,1
+13,octagon_search,11,1
+14,octagon_survey,12,1
+15,octagon_rescue,13,1
+16,octagon_repair,14,1
+17,torpedo_firetruck,15,1
+ 
+
+
